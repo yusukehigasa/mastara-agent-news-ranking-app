@@ -1,0 +1,58 @@
+name: Package Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package-check:
+    name: Build and Package Check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      MASTRA_TELEMETRY_DISABLED: '1'
+      OPENAI_API_KEY: ci-placeholder-not-a-real-key
+      MASTRA_MODEL: openai/gpt-4o-mini
+      NEWS_PROVIDER: livedoor
+    steps:
+      - uses: actions/checkout@v6
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .tool-versions
+          cache: yarn
+          cache-dependency-path: yarn.lock
+      - name: Setup Yarn
+        run: npm install --global yarn@1.22.22
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build
+        run: yarn build
+      - name: Create package
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .mastra/output/index.mjs
+          test -s .mastra/output/package.json
+          test -d .mastra/output/node_modules
+          tar --exclude='.env' --exclude='.env.*' --exclude='.npmrc' \
+            -czf "$RUNNER_TEMP/mastra-package.tar.gz" -C .mastra/output .
+      - name: Verify isolated package startup
+        run: yarn check:package "$RUNNER_TEMP/mastra-package.tar.gz"
+      - name: Upload verified package
+        uses: actions/upload-artifact@v7
+        with:
+          name: mastra-package
+          path: ${{ runner.temp }}/mastra-package.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 0

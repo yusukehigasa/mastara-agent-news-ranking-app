@@ -169,6 +169,23 @@ yarn check:agent general entertainment unsupported
 
 VS Codeは保存時にPrettier整形とESLint修正を実行します。設定は `.vscode/`、`.eslintrc.json`、`.prettierrc` で管理しています。ESLintは8.57.1、TypeScriptは5.9.3を使用しています。
 
+## GitHub Actions
+
+PRの作成・更新、`main` へのpush、Actions画面からの手動実行で、次のチェックが動きます。手動実行はワークフローがデフォルトブランチへマージされた後に利用できます。
+
+| ワークフロー  | 内容                                                               |
+| ------------- | ------------------------------------------------------------------ |
+| CI            | `format:check`、`lint`、`typecheck`、`test` を4ジョブで並列実行    |
+| Package Check | ビルド、成果物のアーカイブ作成、展開後の単独起動確認、Artifact保存 |
+
+いずれもUbuntu 24.04、`.tool-versions` に指定したNode.js、Yarn 1.22.22を使用し、依存関係は `yarn install --frozen-lockfile` でインストールします。同じPRやブランチへの更新が重なった場合は、古い実行をキャンセルします。
+
+Package Checkは `.mastra/output` を実行時依存関係ごと `mastra-package.tar.gz` にまとめ、リポジトリ外の一時ディレクトリに展開して起動します。`/api/agents` がHTTP 200を返し、`news-agent` が登録されていることを確認してからサーバーを停止します。起動待ちは最大30秒です。確認に成功した成果物は、Actionsの実行画面から `mastra-package` Artifactとして7日間ダウンロードできます。成果物はLinux向けで、デプロイは行いません。
+
+`.env`、`.env.*`、`.npmrc` はアーカイブへ含めません。起動確認ではダミーのAPIキーを使い、実ニュース取得やLLM呼び出しは行わないため、GitHub Secretsの設定は不要です。`check:news` と `check:agent` は通常のCIには含めていません。
+
+手元で作成済みのアーカイブを確認する場合は、開発サーバーを停止してから `yarn check:package /path/to/mastra-package.tar.gz` を実行します。ポート4111が使用中の場合は失敗します。
+
 ## ビルド
 
 開発サーバーを停止してから実行します。
