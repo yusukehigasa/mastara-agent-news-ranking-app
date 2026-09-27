@@ -1,0 +1,7 @@
+node_modules/
+.mastra/
+dist/
+yarn.lock
+package-lock.json
+.env
+.env.*
