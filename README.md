@@ -14,10 +14,11 @@ TypeScriptで、Agentの定義、Toolによる外部データ取得、構造化�
 
 ## 起動
 
-Node.js 22.18以上、Yarn Classic 1.22.22を使用します。取得したリポジトリのディレクトリへ移動して実行してください。
+Node.js 24.14.1、Yarn Classic 1.22.22を使用します。Node.jsのバージョンは `.tool-versions` で管理しています。asdfとnodejsプラグインを導入した環境で、取得したリポジトリのディレクトリへ移動して実行してください。
 
 ```sh
 cd mastara-agent-news-ranking-app
+asdf install
 yarn install --frozen-lockfile
 # 初回のみ。既存の .env がある場合はコピー不要
 cp -n .env.example .env
